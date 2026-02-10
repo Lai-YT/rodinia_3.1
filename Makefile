@@ -4,12 +4,13 @@ RODINIA_BASE_DIR := $(shell pwd)
 
 CUDA_BIN_DIR := $(RODINIA_BASE_DIR)/bin/linux/cuda
 
-CUDA_DIRS := gaussian kmeans leukocyte
+CUDA_DIRS := gaussian huffman kmeans leukocyte
 
 all: CUDA
 
 CUDA: 
 	cd cuda/gaussian;		make;	cp gaussian $(CUDA_BIN_DIR)
+	cd cuda/huffman;		make;	cp pavle $(CUDA_BIN_DIR)
 	cd cuda/kmeans; 		make;	cp kmeans $(CUDA_BIN_DIR)
 	cd cuda/leukocyte;  		make;	cp CUDA/leukocyte $(CUDA_BIN_DIR)
 
