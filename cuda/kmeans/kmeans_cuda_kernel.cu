@@ -163,9 +163,9 @@ kmeansPoint(float  *features,			/* in: [npoints*nfeatures] */
 	if(threadIdx.x < nfeatures * nclusters) {
 		// accumulate over all the elements of this threadblock 
 		for(int i = 0; i< (THREADS_PER_BLOCK); i++) {
-			float val = features_flipped[new_base_index+i*nfeatures];
 			if(new_center_ids[i] == center_id) 
-				accumulator += val;
+				if (new_base_index+i*nfeatures < npoints*nfeatures)
+					accumulator += features_flipped[new_base_index+i*nfeatures];
 		}
 	
 		// now store the sum for this threadblock
