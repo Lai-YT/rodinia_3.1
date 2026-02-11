@@ -44,6 +44,20 @@
 #define FLT_MAX 3.40282347e+38
 #endif
 
+#ifndef NPOINTS
+#define NPOINTS 494020
+#endif
+#ifndef NFEATURES
+#define NFEATURES 34
+#endif
+#ifndef NCLUSTERS
+#define NCLUSTERS 5
+#endif
+#ifndef NBLOCKS_PERDIM
+// With npoints=494020 and num_threads=256, num_blocks_perdim becomes 44.
+#define NBLOCKS_PERDIM 44
+#endif
+
 /* rmse.c */
 float   euclid_dist_2        (float*, float*, int);
 int     find_nearest_point   (float* , int, float**, int);

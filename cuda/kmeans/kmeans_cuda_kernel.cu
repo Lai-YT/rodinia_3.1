@@ -26,8 +26,8 @@ __constant__ float c_clusters[ASSUMED_NR_CLUSTERS*34];		/* constant memory for c
    [dim1,p0][dim1,p1][dim1,p2] ...
    [dim2,p0][dim2,p1][dim2,p2] ...
 */
-__global__ void invert_mapping(float *input,			/* original */
-							   float *output,			/* inverted */
+__global__ void invert_mapping(float (*input)[NFEATURES],			/* original */
+							   float (*output)[NPOINTS],			/* inverted */
 							   int npoints,				/* npoints */
 							   int nfeatures)			/* nfeatures */
 {
@@ -36,7 +36,7 @@ __global__ void invert_mapping(float *input,			/* original */
 
 	if(point_id < npoints){
 		for(i=0;i<nfeatures;i++)
-			output[point_id + npoints*i] = input[point_id*nfeatures + i];
+			output[i][point_id] = input[point_id][i];
 	}
 	return;
 }
@@ -50,15 +50,15 @@ __global__ void invert_mapping(float *input,			/* original */
 /* ----------------- kmeansPoint() --------------------- */
 /* find the index of nearest cluster centers and change membership*/
 __global__ void
-kmeansPoint(float  *features,			/* in: [npoints*nfeatures] */
+kmeansPoint(float  (*features)[NPOINTS],			/* in: [npoints*nfeatures] */
             int     nfeatures,
             int     npoints,
             int     nclusters,
             int    *membership,
-			float  *clusters,
-			float  *block_clusters,
-			int    *block_deltas,
-			float  *features_flipped) 
+			float  (*clusters)[NFEATURES],
+			float  (*block_clusters)[NCLUSTERS][NFEATURES],
+			int    (*block_deltas)[NBLOCKS_PERDIM],
+			float  (*features_flipped)[NFEATURES]) 
 {
 
 	// block ID
@@ -82,7 +82,7 @@ kmeansPoint(float  *features,			/* in: [npoints*nfeatures] */
 			for (j=0; j < nfeatures; j++)
 			{					
 				int addr = point_id + j*npoints;					/* appropriate index of data point */
-				float diff = (features[addr] -
+				float diff = (features[j][point_id] -
 							  c_clusters[cluster_base_index + j]);	/* distance between a data point to cluster centers */
 				ans += diff*diff;									/* sum of squares */
 			}
@@ -134,7 +134,7 @@ kmeansPoint(float  *features,			/* in: [npoints*nfeatures] */
 	__syncthreads();
 		// propagate number of changes to global counter
 	if(threadIdx.x == 0) {
-		block_deltas[blockIdx.y * gridDim.x + blockIdx.x] = deltas[0];
+		block_deltas[blockIdx.y][blockIdx.x] = deltas[0];
 		//printf("original id: %d, modified: %d\n", blockIdx.y*gridDim.x+blockIdx.x, blockIdx.x);
 		
 	}
@@ -165,7 +165,7 @@ kmeansPoint(float  *features,			/* in: [npoints*nfeatures] */
 		for(int i = 0; i< (THREADS_PER_BLOCK); i++) {
 			if(new_center_ids[i] == center_id) 
 				if (new_base_index+i*nfeatures < npoints*nfeatures)
-					accumulator += features_flipped[new_base_index+i*nfeatures];
+					accumulator += features_flipped[point_id - threadIdx.x + i][dim_id];
 		}
 	
 		// now store the sum for this threadblock
@@ -173,7 +173,7 @@ kmeansPoint(float  *features,			/* in: [npoints*nfeatures] */
 		mapping to global array is
 		block0[center0[dim0,dim1,dim2,...]center1[dim0,dim1,dim2,...]...]block1[...]...
 		***/
-		block_clusters[(blockIdx.y*gridDim.x + blockIdx.x) * nclusters * nfeatures + threadIdx.x] = accumulator;
+		block_clusters[blockIdx.y*gridDim.x + blockIdx.x][center_id][dim_id] = accumulator;
 	}
 #endif
 
