@@ -15,11 +15,11 @@
 #include "kmeans_cuda_kernel.cu"
 
 
-//#define BLOCK_DELTA_REDUCE
-//#define BLOCK_CENTER_REDUCE
+#define BLOCK_DELTA_REDUCE
+#define BLOCK_CENTER_REDUCE
 
-#define CPU_DELTA_REDUCE
-#define CPU_CENTER_REDUCE
+//#define CPU_DELTA_REDUCE
+//#define CPU_CENTER_REDUCE
 
 extern "C"
 int setup(int argc, char** argv);									/* function prototype */
