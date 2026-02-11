@@ -12,6 +12,12 @@
 // The size of the structuring element used in dilation
 #define STREL_SIZE (12 * 2 + 1)
 
+#ifndef GRAD_M
+#define GRAD_M 219
+#endif
+#ifndef GRAD_N
+#define GRAD_N 640
+#endif
 
 // Matrix used to store the maximal GICOV score at each pixels
 // Produced by the GICOV kernel and consumed by the dilation kernel
@@ -26,7 +32,7 @@ __constant__ int c_tY[NCIRCLES * NPOINTS];
 
 // Kernel to find the maximal GICOV value at each pixel of a
 //  video frame, based on the input x- and y-gradient matrices
-__global__ void GICOV_kernel(int grad_m, float *gicov, float *grad_x, float *grad_y) {
+__global__ void GICOV_kernel(int grad_m, float (*gicov)[GRAD_M], float (*grad_x)[GRAD_M], float (*grad_y)[GRAD_M]) {
 	int i, j, k, n, x, y;
 	
 	// Determine this thread's pixel
@@ -50,8 +56,8 @@ __global__ void GICOV_kernel(int grad_m, float *gicov, float *grad_x, float *gra
 			
 			// Compute the combined gradient value at the current sample point
 			int addr = x * grad_m + y;
-			float p = grad_x[addr] * c_cos_angle[n] + 
-					  grad_y[addr] * c_sin_angle[n];
+			float p = grad_x[x][y] * c_cos_angle[n] + 
+					  grad_y[x][y] * c_sin_angle[n];
 			
 			// Update the running total
 			sum += p;
@@ -73,7 +79,7 @@ __global__ void GICOV_kernel(int grad_m, float *gicov, float *grad_x, float *gra
 	}
 	
 	// Store the maximal GICOV value
-	gicov[(i * grad_m) + j] = max_GICOV;
+	gicov[i][j] = max_GICOV;
 }
 
 
@@ -102,7 +108,7 @@ float *GICOV_CUDA(int grad_m, int grad_n, float *host_grad_x, float *host_grad_y
 	int threads_per_block = grad_m - (2 * MaxR);
     
 	// Execute the GICOV kernel
-	GICOV_kernel <<< num_blocks, threads_per_block >>> (grad_m, device_gicov, device_grad_x, device_grad_y);
+	GICOV_kernel <<< num_blocks, threads_per_block >>> (grad_m, (float (*)[GRAD_M])device_gicov, (float (*)[GRAD_M])device_grad_x, (float (*)[GRAD_M])device_grad_y);
 	
 	// Check for kernel errors
 	cudaDeviceSynchronize();
@@ -131,7 +137,7 @@ __constant__ float c_strel[STREL_SIZE * STREL_SIZE];
 // Each element (i, j) of the output matrix is set equal to the maximal value in
 //  the neighborhood surrounding element (i, j) in the input matrix
 // Here the neighborhood is defined by the structuring element (c_strel)
-__global__ void dilate_kernel(int img_m, int img_n, int strel_m, int strel_n, float *dilated, float *img) {	
+__global__ void dilate_kernel(int img_m, int img_n, int strel_m, int strel_n, float (*dilated)[GRAD_N], float (*img)[GRAD_M]) {	
 	// Find the center of the structuring element
 	int el_center_i = strel_m / 2;
 	int el_center_j = strel_n / 2;
@@ -160,7 +166,7 @@ __global__ void dilate_kernel(int img_m, int img_n, int strel_m, int strel_n, fl
 					(c_strel[(el_i * strel_n) + el_j] != 0) ) {
 						// Determine if this is maximal value seen so far
 						int addr = (x * img_m) + y;
-						float temp = img[addr];
+						float temp = img[x][y];
 						if (temp > max) max = temp;
 				}
 			}
@@ -168,7 +174,7 @@ __global__ void dilate_kernel(int img_m, int img_n, int strel_m, int strel_n, fl
 	}
 	
 	// Store the maximum value found
-	dilated[(i * img_n) + j] = max;
+	dilated[i][j] = max;
 }
 
 
@@ -185,7 +191,7 @@ float *dilate_CUDA(int max_gicov_m, int max_gicov_n, int strel_m, int strel_n) {
 	int num_blocks = (int) (((float) num_threads / (float) threads_per_block) + 0.5);
 
 	// Execute the dilation kernel
-	dilate_kernel <<< num_blocks, threads_per_block >>> (max_gicov_m, max_gicov_n, strel_m, strel_n, device_img_dilated, device_gicov);
+	dilate_kernel <<< num_blocks, threads_per_block >>> (max_gicov_m, max_gicov_n, strel_m, strel_n, (float (*)[GRAD_N])device_img_dilated, (float (*)[GRAD_M])device_gicov);
 	
 	// Check for kernel errors
 	cudaDeviceSynchronize();
