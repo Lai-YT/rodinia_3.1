@@ -24,4 +24,8 @@ typedef unsigned char uint8;
 
 #define NUM_SYMBOLS 256 //fixed to 256.
 
+#ifndef NUM_BLOCK_THREADS
+#define NUM_BLOCK_THREADS 256
+#endif
+
 #endif

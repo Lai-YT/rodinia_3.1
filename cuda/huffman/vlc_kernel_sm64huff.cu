@@ -34,12 +34,12 @@
 */
 
 
-__global__ static void vlc_encode_kernel_sm64huff(unsigned int* data,
+__global__ static void vlc_encode_kernel_sm64huff(unsigned int(* data)[NUM_BLOCK_THREADS],
 								  const unsigned int* gm_codewords, const unsigned int* gm_codewordlens,
 							#ifdef TESTING
-								  unsigned int* cw32, unsigned int* cw32len, unsigned int* cw32idx, 
+								  unsigned int(* cw32)[NUM_BLOCK_THREADS], unsigned int(* cw32len)[NUM_BLOCK_THREADS], unsigned int(* cw32idx)[NUM_BLOCK_THREADS], 
 							#endif
-								  unsigned int* out, unsigned int *outidx){
+								  unsigned int(* out)[NUM_BLOCK_THREADS], unsigned int *outidx){
 
 	unsigned int kn = blockIdx.x*blockDim.x + threadIdx.x;
 	unsigned int k = threadIdx.x;
@@ -61,7 +61,7 @@ __global__ static void vlc_encode_kernel_sm64huff(unsigned int* data,
 	/* Load the codewords and the original data*/
 	codewords[k]	= gm_codewords[k];
 	codewordlens[k] = gm_codewordlens[k];
-	val32			= data[kn];
+	val32			= data[blockIdx.x][k];
 	__syncthreads();
 	for(unsigned int i=0; i<4;i++) {
 		tmpbyte = (unsigned char)(val32>>((3-i)*8));
@@ -72,7 +72,7 @@ __global__ static void vlc_encode_kernel_sm64huff(unsigned int* data,
 	}
 #else
 	unsigned int* as			= (unsigned int*) sm;
-	val32 = data[kn];
+	val32 = data[blockIdx.x][k];
 	for(unsigned int i=0; i<4;i++) {
 		tmpbyte = (unsigned char)(val32>>((3-i)*8));
 		tmpcw32 = gm_codewords[tmpbyte];
@@ -155,7 +155,7 @@ __global__ static void vlc_encode_kernel_sm64huff(unsigned int* data,
 
 	__syncthreads();
 
-	if (k<=kcmax) out[kn] = as[k];
+	if (k<=kcmax) out[blockIdx.x][k] = as[k];
 
 }
 //////////////////////////////////////////////////////////////////////////////								  

@@ -16,7 +16,7 @@
 #define _PACK_KERNELS_H_
 #include "parameters.h"
 
-__global__ static void pack2(unsigned int *srcData, unsigned int *cindex, unsigned int *cindex2, unsigned int *dstData, unsigned int original_num_block_elements) {
+__global__ static void pack2(unsigned int (*srcData)[NUM_BLOCK_THREADS], unsigned int *cindex, unsigned int *cindex2, unsigned int *dstData, unsigned int original_num_block_elements) {
 	unsigned int tid = blockDim.x*blockIdx.x + threadIdx.x;
 
 	// source index
@@ -29,12 +29,12 @@ __global__ static void pack2(unsigned int *srcData, unsigned int *cindex, unsign
 				 bit = pos % 32;
 
 	unsigned int i, dw, tmp;
-	dw = srcData[offset];			// load the first dword from srcData[]
+	dw = srcData[tid][0];			// load the first dword from srcData[]
 	tmp = dw >> bit;				// cut off those bits that do not fit into the initial location in destData[]
 	atomicOr(&dstData[dword], tmp);	// fill up this initial location
 	tmp = dw << 32-bit;				// save the remaining bits that were cut off earlier in tmp
 	for (i=1; i<bitsize/32; i++) {	// from now on, we have exclusive access to destData[]
-		dw = srcData[offset+i];		// load next dword from srcData[]
+		dw = srcData[tid][i];		// load next dword from srcData[]
 		tmp |= dw >> bit;			// fill up tmp
 		dstData[dword+i] = tmp;		// write complete dword to destData[]
 		tmp = dw << 32-bit;			// save the remaining bits in tmp (like before)
@@ -45,7 +45,7 @@ __global__ static void pack2(unsigned int *srcData, unsigned int *cindex, unsign
 	if (bit != 0 || bitsize % 32 != 0)
 		atomicOr(&dstData[dword+i], tmp);
 	if (bitsize % 32 != 0) {
-		dw = srcData[offset+i];
+		dw = srcData[tid][i];
 		atomicOr(&dstData[dword+i], dw >> bit);
 		atomicOr(&dstData[dword+i+1], dw << 32-bit);
 	}

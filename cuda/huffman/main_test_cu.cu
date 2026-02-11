@@ -139,11 +139,11 @@ void runVLCTest(char *file_name, uint num_block_threads, uint num_blocks) {
 
     cudaEventRecord( start, 0 );
         for (int i=0; i<NT; i++) {
-            vlc_encode_kernel_sm64huff<<<grid_size, block_size, sm_size>>>(d_sourceData, d_codewords, d_codewordlens,  
+            vlc_encode_kernel_sm64huff<<<grid_size, block_size, sm_size>>>((unsigned int(*)[NUM_BLOCK_THREADS])d_sourceData, d_codewords, d_codewordlens,  
 #ifdef TESTING
-                    d_cw32, d_cw32len, d_cw32idx, 
+                    (unsigned int(*)[NUM_BLOCK_THREADS])d_cw32, (unsigned int(*)[NUM_BLOCK_THREADS])d_cw32len, (unsigned int(*)[NUM_BLOCK_THREADS])d_cw32idx, 
 #endif
-                    d_destData, d_cindex); //testedOK2
+                    (unsigned int(*)[NUM_BLOCK_THREADS])d_destData, d_cindex); //testedOK2
         }
     cudaDeviceSynchronize();
     cudaEventRecord( stop, 0 ) ;
@@ -163,7 +163,7 @@ void runVLCTest(char *file_name, uint num_block_threads, uint num_blocks) {
     printf("Num_blocks to be passed to scan is %d.\n", num_scan_elements);
     prescanArray(d_cindex2, d_cindex, num_scan_elements);
 
-    pack2<<< num_scan_elements/16, 16>>>((unsigned int*)d_destData, d_cindex, d_cindex2, (unsigned int*)d_destDataPacked, num_elements/num_scan_elements);
+    pack2<<< num_scan_elements/16, 16>>>((unsigned int(*)[NUM_BLOCK_THREADS])d_destData, d_cindex, d_cindex2, (unsigned int*)d_destDataPacked, num_elements/num_scan_elements);
     CUT_CHECK_ERROR("Pack2 Kernel execution failed\n");
     deallocBlockSums();
 
