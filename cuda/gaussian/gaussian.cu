@@ -290,7 +290,7 @@ void InitPerRun()
  ** of t which is defined on the ForwardSub().
  **-------------------------------------------------------
  */
-__global__ void Fan1(float (*m_cuda)[SIZE], float (*a_cuda)[SIZE], int Size, int t)
+__global__ void Fan1(float (*__restrict__ m_cuda)[SIZE], float (*__restrict__ a_cuda)[SIZE], int Size, int t)
 {   
 	//if(threadIdx.x + blockIdx.x * blockDim.x >= Size-1-t) printf(".");
 	//printf("blockIDx.x:%d,threadIdx.x:%d,Size:%d,t:%d,Size-1-t:%d\n",blockIdx.x,threadIdx.x,Size,t,Size-1-t);
@@ -304,7 +304,7 @@ __global__ void Fan1(float (*m_cuda)[SIZE], float (*a_cuda)[SIZE], int Size, int
  **-------------------------------------------------------
  */ 
 
-__global__ void Fan2(float (*m_cuda)[SIZE], float (*a_cuda)[SIZE], float *b_cuda,int Size, int j1, int t)
+__global__ void Fan2(float (*__restrict__ m_cuda)[SIZE], float (*__restrict__ a_cuda)[SIZE], float *__restrict__ b_cuda,int Size, int j1, int t)
 {
 	if(threadIdx.x + blockIdx.x * blockDim.x >= Size-1-t) return;
 	if(threadIdx.y + blockIdx.y * blockDim.y >= Size-t) return;
