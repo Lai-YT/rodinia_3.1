@@ -32,7 +32,7 @@ __constant__ int c_tY[NCIRCLES * NPOINTS];
 
 // Kernel to find the maximal GICOV value at each pixel of a
 //  video frame, based on the input x- and y-gradient matrices
-__global__ void GICOV_kernel(int grad_m, float (*gicov)[GRAD_M], float (*grad_x)[GRAD_M], float (*grad_y)[GRAD_M]) {
+__global__ void GICOV_kernel(int grad_m, float (*__restrict__ gicov)[GRAD_M], float (*__restrict__ grad_x)[GRAD_M], float (*__restrict__ grad_y)[GRAD_M]) {
 	int i, j, k, n, x, y;
 	
 	// Determine this thread's pixel
@@ -137,7 +137,7 @@ __constant__ float c_strel[STREL_SIZE * STREL_SIZE];
 // Each element (i, j) of the output matrix is set equal to the maximal value in
 //  the neighborhood surrounding element (i, j) in the input matrix
 // Here the neighborhood is defined by the structuring element (c_strel)
-__global__ void dilate_kernel(int img_m, int img_n, int strel_m, int strel_n, float (*dilated)[GRAD_N], float (*img)[GRAD_M]) {	
+__global__ void dilate_kernel(int img_m, int img_n, int strel_m, int strel_n, float (*__restrict__ dilated)[GRAD_N], float (*__restrict__ img)[GRAD_M]) {	
 	// Find the center of the structuring element
 	int el_center_i = strel_m / 2;
 	int el_center_j = strel_n / 2;
