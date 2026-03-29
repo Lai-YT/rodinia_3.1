@@ -26,8 +26,8 @@ __constant__ float c_clusters[ASSUMED_NR_CLUSTERS*34];		/* constant memory for c
    [dim1,p0][dim1,p1][dim1,p2] ...
    [dim2,p0][dim2,p1][dim2,p2] ...
 */
-__global__ void invert_mapping(float (*input)[NFEATURES],			/* original */
-							   float (*output)[NPOINTS],			/* inverted */
+__global__ void invert_mapping(float (*__restrict__ input)[NFEATURES],			/* original */
+							   float (*__restrict__ output)[NPOINTS],			/* inverted */
 							   int npoints,				/* npoints */
 							   int nfeatures)			/* nfeatures */
 {
@@ -50,15 +50,15 @@ __global__ void invert_mapping(float (*input)[NFEATURES],			/* original */
 /* ----------------- kmeansPoint() --------------------- */
 /* find the index of nearest cluster centers and change membership*/
 __global__ void
-kmeansPoint(float  (*features)[NPOINTS],			/* in: [npoints*nfeatures] */
+kmeansPoint(float  (*__restrict__ features)[NPOINTS],			/* in: [npoints*nfeatures] */
             int     nfeatures,
             int     npoints,
             int     nclusters,
-            int    *membership,
-			float  (*clusters)[NFEATURES],
-			float  (*block_clusters)[NCLUSTERS][NFEATURES],
-			int    (*block_deltas)[NBLOCKS_PERDIM],
-			float  (*features_flipped)[NFEATURES]) 
+            int    *__restrict__ membership,
+			float  (*__restrict__ clusters)[NFEATURES],
+			float  (*__restrict__ block_clusters)[NCLUSTERS][NFEATURES],
+			int    (*__restrict__ block_deltas)[NBLOCKS_PERDIM],
+			float  (*__restrict__ features_flipped)[NFEATURES]) 
 {
 
 	// block ID
