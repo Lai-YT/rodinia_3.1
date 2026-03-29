@@ -34,12 +34,12 @@
 */
 
 
-__global__ static void vlc_encode_kernel_sm64huff(unsigned int(* data)[NUM_BLOCK_THREADS],
-								  const unsigned int* gm_codewords, const unsigned int* gm_codewordlens,
+__global__ static void vlc_encode_kernel_sm64huff(unsigned int(* __restrict__ data)[NUM_BLOCK_THREADS],
+								  const unsigned int* __restrict__ gm_codewords, const unsigned int* __restrict__ gm_codewordlens,
 							#ifdef TESTING
-								  unsigned int(* cw32)[NUM_BLOCK_THREADS], unsigned int(* cw32len)[NUM_BLOCK_THREADS], unsigned int(* cw32idx)[NUM_BLOCK_THREADS], 
+								  unsigned int(* __restrict__ cw32)[NUM_BLOCK_THREADS], unsigned int(* __restrict__ cw32len)[NUM_BLOCK_THREADS], unsigned int(* __restrict__ cw32idx)[NUM_BLOCK_THREADS], 
 							#endif
-								  unsigned int(* out)[NUM_BLOCK_THREADS], unsigned int *outidx){
+								  unsigned int(* __restrict__ out)[NUM_BLOCK_THREADS], unsigned int *__restrict__ outidx){
 
 	unsigned int kn = blockIdx.x*blockDim.x + threadIdx.x;
 	unsigned int k = threadIdx.x;
